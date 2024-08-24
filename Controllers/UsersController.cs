@@ -35,7 +35,7 @@ namespace IdentityApp.Controllers
             {
                 var user = new AppUser
                 {
-                    UserName = model.Email,
+                    UserName = model.UserName,
                     Email = model.Email,
                     FullName = model.FullName
                 };
@@ -71,7 +71,7 @@ namespace IdentityApp.Controllers
                 return View(new EditViewModel
                 {
                     Id = user.Id,
-                    FullName= user.FullName,
+                    FullName = user.FullName,
                     Email = user.Email,
                     SelectedRoles = await _userManager.GetRolesAsync(user)
                 });
@@ -82,7 +82,7 @@ namespace IdentityApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(string id, EditViewModel model)
         {
-            if(id != model.Id)
+            if (id != model.Id)
             {
                 return RedirectToAction("Index");
             }
@@ -98,7 +98,7 @@ namespace IdentityApp.Controllers
 
                     var result = await _userManager.UpdateAsync(user);
 
-                    if(result.Succeeded && !string.IsNullOrEmpty(model.Password))
+                    if (result.Succeeded && !string.IsNullOrEmpty(model.Password))
                     {
                         await _userManager.RemovePasswordAsync(user);
                         await _userManager.AddPasswordAsync(user, model.Password);
@@ -106,6 +106,11 @@ namespace IdentityApp.Controllers
 
                     if (result.Succeeded)
                     {
+                        await _userManager.RemoveFromRolesAsync(user, await _userManager.GetRolesAsync(user));
+                        if (model.SelectedRoles != null)
+                        {
+                            await _userManager.AddToRolesAsync(user, model.SelectedRoles);
+                        }
                         return RedirectToAction("Index");
                     }
 
