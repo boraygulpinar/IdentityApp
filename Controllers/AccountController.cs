@@ -10,12 +10,14 @@ namespace IdentityApp.Controllers
         private UserManager<AppUser> _userManager;
         private RoleManager<AppRole> _roleManager;
         private SignInManager<AppUser> _signInManager;
+        private IEmailSender _emailSender;
 
-        public AccountController(UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, SignInManager<AppUser> signInManager)
+        public AccountController(UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, SignInManager<AppUser> signInManager, IEmailSender emailSender)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
+            _emailSender = emailSender;
         }
 
         [HttpGet]
@@ -96,9 +98,10 @@ namespace IdentityApp.Controllers
                     var url = Url.Action("ConfirmEmail", "Account", new { Id = user.Id, token = token }); //ConfirmEmail methodu
 
                     // email
+                    await _emailSender.SendEmailAsync(user.Email, "Hesap Onayı", $"Lütfen email hesabınızı onaylaman için linke <a href='https://localhost:7253{url}'>tıklayınız.</a>");
 
                     TempData["message"] = "Email hesabınızdaki onay mailini tıklayınız.";
-                    return RedirectToAction("Login","Account");
+                    return RedirectToAction("Login", "Account");
                 }
                 foreach (IdentityError err in result.Errors)
                 {
@@ -111,7 +114,7 @@ namespace IdentityApp.Controllers
 
         public async Task<IActionResult> ConfirmEmail(string Id, string token)
         {
-            if(Id == null || token == null)
+            if (Id == null || token == null)
             {
                 TempData["message"] = "Geçersiz token bilgisi.";
                 return View();
@@ -121,7 +124,7 @@ namespace IdentityApp.Controllers
 
             if (user != null)
             {
-                var result = await _userManager.ConfirmEmailAsync(user,token);
+                var result = await _userManager.ConfirmEmailAsync(user, token);
 
                 if (result.Succeeded)
                 {
